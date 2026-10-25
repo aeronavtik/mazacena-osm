@@ -1,0 +1,81 @@
+# Ежедневная выгрузка магазинов, аптек, торговых центров и ориентиров Латвии из OpenStreetMap
+# для плагина MazaCena Stores. Результат публикуется на GitHub Pages:
+#   https://<пользователь>.github.io/<репозиторий>/meta.json, food.json, other.json, places.json
+
+name: OSM export
+
+on:
+  schedule:
+    # 00:15 UTC = 02:15 / 03:15 по Риге: свежая выгрузка Geofabrik к этому времени готова
+    - cron: '15 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: osm-export
+  cancel-in-progress: false
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Install osmium
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq osmium-tool
+
+      - name: Download Latvia extract (Geofabrik)
+        run: curl -sSfL --retry 3 --retry-delay 30 -o latvia.osm.pbf https://download.geofabrik.de/europe/latvia-latest.osm.pbf
+
+      - name: Cut Latvia by its official border
+        run: |
+          # Выгрузка Geofabrik захватывает полосу соседних стран: режем по границе Латвии из самих данных
+          osmium tags-filter latvia.osm.pbf r/ISO3166-1=LV -o border.osm.pbf --overwrite
+          osmium export border.osm.pbf --geometry-types=polygon -f geojson -o border.geojson --overwrite
+          php build.php border border.geojson border-lv.geojson
+          osmium extract -p border-lv.geojson latvia.osm.pbf -o lv.osm.pbf --overwrite
+
+      - name: Filter shops, pharmacies, malls and landmarks
+        run: |
+          osmium tags-filter lv.osm.pbf \
+            nwr/shop=supermarket,convenience,wholesale,general,department_store,mall,doityourself,hardware,furniture,variety_store,chemist,cosmetics,perfumery,houseware,garden_centre,interior_decoration,household_linen,bed \
+            nwr/amenity=pharmacy,bus_station,townhall,marketplace,hospital,post_office,place_of_worship \
+            nwr/railway=station,halt \
+            nwr/tourism=museum \
+            -o filtered.osm.pbf --overwrite
+          osmium export filtered.osm.pbf -f geojsonseq --add-unique-id=type_id --geometry-types=point,linestring,polygon -x print_record_separator=false -o filtered.geojsonseq --overwrite
+
+      - name: Build JSON files
+        run: |
+          export OSM_TIMESTAMP="$(osmium fileinfo -g header.option.osmosis_replication_timestamp latvia.osm.pbf || true)"
+          mkdir -p out
+          php build.php features filtered.geojsonseq out
+          touch out/.nojekyll
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
+      - id: deploy
+        uses: actions/deploy-pages@v4
+
+      - name: Keep the schedule alive
+        run: |
+          # GitHub отключает расписание, если в репозитории 60 дней нет коммитов: раз в 50 дней — пустой служебный коммит
+          last=$(git log -1 --format=%ct)
+          if [ $(( $(date +%s) - last )) -gt 4320000 ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit --allow-empty -m "keepalive: schedule stays active"
+            git push
+          fi
