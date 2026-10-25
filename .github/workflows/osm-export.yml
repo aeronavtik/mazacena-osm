@@ -48,7 +48,7 @@ jobs:
       - name: Filter shops, pharmacies, malls and landmarks
         run: |
           osmium tags-filter lv.osm.pbf \
-            nwr/shop=supermarket,convenience,wholesale,general,department_store,mall,doityourself,hardware,furniture,variety_store,chemist,cosmetics,perfumery,houseware,garden_centre,interior_decoration,household_linen,bed \
+            nwr/shop=supermarket,convenience,wholesale,general,department_store,mall,doityourself,hardware,furniture,variety_store,chemist,cosmetics,perfumery,houseware,garden_centre,interior_decoration,household_linen,bed,clothes \
             nwr/amenity=pharmacy,bus_station,townhall,marketplace,hospital,post_office,place_of_worship \
             nwr/railway=station,halt \
             nwr/tourism=museum \
