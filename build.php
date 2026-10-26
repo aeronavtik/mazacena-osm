@@ -10,7 +10,7 @@
      ({"osm3s":{...},"elements":[{type,id,lat,lon,tags}]}), чтобы плагин разбирал их тем же кодом:
        food.json   — продуктовые магазины и торговые центры
        other.json  — аптеки и промтовары
-       places.json — ориентиры для блока «Kā atrast» (только с названием)
+       places.json — ориентиры для блока «Kā atrast» (только с названием) и автоматы приёма тары (vending=bottle_return)
        meta.json   — время выгрузки и число объектов
 */
 
@@ -42,7 +42,7 @@ if( $mode !== 'features' ) {
 }
 
 // Теги, которые нужны плагину; остальные отбрасываются, чтобы файлы были меньше
-$keep = array( 'name', 'name:lv', 'brand', 'brand:wikidata', 'shop', 'amenity', 'railway', 'tourism', 'addr:street', 'addr:housenumber', 'addr:city', 'addr:place', 'addr:postcode', 'opening_hours', 'phone', 'contact:phone', 'website', 'contact:website' );
+$keep = array( 'name', 'name:lv', 'brand', 'brand:wikidata', 'shop', 'amenity', 'railway', 'tourism', 'vending', 'operator', 'addr:street', 'addr:housenumber', 'addr:city', 'addr:place', 'addr:postcode', 'opening_hours', 'phone', 'contact:phone', 'website', 'contact:website' );
 
 $food = array( 'supermarket', 'convenience', 'wholesale', 'general', 'department_store', 'mall' );
 $goods = array( 'doityourself', 'hardware', 'furniture', 'variety_store', 'chemist', 'cosmetics', 'perfumery', 'houseware', 'garden_centre', 'interior_decoration', 'household_linen', 'bed' );
@@ -103,6 +103,8 @@ while( ( $line = fgets( $fh ) ) !== false ) {
 	elseif( $amenity === 'pharmacy' OR in_array( $shop, $goods, true ) ) $set = 'other';
 	// Магазины одежды нужны только сетям из буклетов, которые OSM размечает одеждой (Pepco)
 	elseif( $shop === 'clothes' AND preg_match( '/\bpepco\b/i', ( isset( $t['brand'] ) ? $t['brand'] : '' ) . ' ' . ( isset( $t['name'] ) ? $t['name'] : '' ) ) ) $set = 'other';
+	// Автоматы приёма тары (taromāti): без названия, к ним плагин привязывает ближайший магазин
+	elseif( isset( $t['vending'] ) AND strpos( $t['vending'], 'bottle_return' ) !== false ) $set = 'places';
 	elseif( $named AND ( isset( $t['railway'] ) AND in_array( $t['railway'], array( 'station', 'halt' ), true ) OR in_array( $amenity, $places, true ) OR ( isset( $t['tourism'] ) AND $t['tourism'] === 'museum' ) ) ) $set = 'places';
 	else continue;
 

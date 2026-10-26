@@ -45,13 +45,14 @@ jobs:
           php build.php border border.geojson border-lv.geojson
           osmium extract -p border-lv.geojson latvia.osm.pbf -o lv.osm.pbf --overwrite
 
-      - name: Filter shops, pharmacies, malls and landmarks
+      - name: Filter shops, pharmacies, malls, landmarks and bottle return machines
         run: |
           osmium tags-filter lv.osm.pbf \
             nwr/shop=supermarket,convenience,wholesale,general,department_store,mall,doityourself,hardware,furniture,variety_store,chemist,cosmetics,perfumery,houseware,garden_centre,interior_decoration,household_linen,bed,clothes \
             nwr/amenity=pharmacy,bus_station,townhall,marketplace,hospital,post_office,place_of_worship \
             nwr/railway=station,halt \
             nwr/tourism=museum \
+            nwr/vending=bottle_return \
             -o filtered.osm.pbf --overwrite
           osmium export filtered.osm.pbf -f geojsonseq --add-unique-id=type_id --geometry-types=point,linestring,polygon -x print_record_separator=false -o filtered.geojsonseq --overwrite
 
