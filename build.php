@@ -101,8 +101,9 @@ while( ( $line = fgets( $fh ) ) !== false ) {
 	// Узлы-входы и прочие объекты, попавшие в выгрузку как части зданий, отбрасываются: группа определяется по тегам
 	if( in_array( $shop, $food, true ) ) $set = 'food';
 	elseif( $amenity === 'pharmacy' OR in_array( $shop, $goods, true ) ) $set = 'other';
-	// Магазины одежды нужны только сетям из буклетов, которые OSM размечает одеждой (Pepco)
-	elseif( $shop === 'clothes' AND preg_match( '/\bpepco\b/i', ( isset( $t['brand'] ) ? $t['brand'] : '' ) . ' ' . ( isset( $t['name'] ) ? $t['name'] : '' ) ) ) $set = 'other';
+	// Магазины одежды и книжные — только сетям карты (Pepco, Lindex, H&M, Sinsay, Reserved; Jānis Roze)
+	elseif( $shop === 'clothes' AND preg_match( '/\b(pepco|lindex|sinsay|reserved)\b|^h\s*&\s*m\b/iu', trim( ( isset( $t['brand'] ) ? $t['brand'] : '' ) . ' ' . ( isset( $t['name'] ) ? $t['name'] : '' ) ) ) ) $set = 'other';
+	elseif( $shop === 'books' AND preg_match( '/\bj[aā]nis\s+roze\b/iu', ( isset( $t['brand'] ) ? $t['brand'] : '' ) . ' ' . ( isset( $t['name'] ) ? $t['name'] : '' ) ) ) $set = 'other';
 	// Автоматы приёма тары (taromāti): без названия, к ним плагин привязывает ближайший магазин
 	elseif( isset( $t['vending'] ) AND strpos( $t['vending'], 'bottle_return' ) !== false ) $set = 'places';
 	elseif( $named AND ( isset( $t['railway'] ) AND in_array( $t['railway'], array( 'station', 'halt' ), true ) OR in_array( $amenity, $places, true ) OR ( isset( $t['tourism'] ) AND $t['tourism'] === 'museum' ) ) ) $set = 'places';

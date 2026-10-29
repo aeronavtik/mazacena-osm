@@ -15,7 +15,7 @@
 |---|---|
 | `meta.json` | время выгрузки, дата данных OSM, число объектов |
 | `food.json` | `shop=supermarket, convenience, wholesale, general, department_store, mall` |
-| `other.json` | `amenity=pharmacy`, `shop=doityourself, hardware, furniture, variety_store, chemist, cosmetics…` |
+| `other.json` | `amenity=pharmacy`, `shop=doityourself, hardware, furniture, variety_store, chemist, cosmetics…` (+ одежда Pepco, Lindex, H&M, Sinsay, Reserved и книжные Jānis Roze) |
 | `places.json` | ориентиры с названием и автоматы приёма тары (`vending=bottle_return`) |
 
 Если объектов подозрительно мало, выгрузка не публикуется, и на Pages остаются вчерашние файлы.
